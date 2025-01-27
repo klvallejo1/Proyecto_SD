@@ -1,0 +1,49 @@
+# 1. Laptop Gaming
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d '{
+    "sucursal": "Sucursal Centro",
+    "producto": "Laptop Alienware RTX 4090",
+    "cantidad": 1,
+    "total": 3999.99
+}'
+
+# 2. Monitores
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d '{
+    "sucursal": "Sucursal Norte",
+    "producto": "Monitor LG 32 UltraWide",
+    "cantidad": 3,
+    "total": 1499.97
+}'
+
+# 3. Accesorios
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d '{
+    "sucursal": "Sucursal Sur",
+    "producto": "Mouse Logitech G Pro X",
+    "cantidad": 5,
+    "total": 499.95
+}'
+
+# 4. Componentes
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d '{
+    "sucursal": "Sucursal Centro",
+    "producto": "Tarjeta Gráfica RTX 4080",
+    "cantidad": 2,
+    "total": 2999.98
+}'
+
+# 5. Almacenamiento
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d '{
+    "sucursal": "Sucursal Norte",
+    "producto": "SSD Samsung 2TB",
+    "cantidad": 4,
+    "total": 799.96
+}'
