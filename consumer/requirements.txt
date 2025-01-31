@@ -1,2 +1,4 @@
+# ./consumer/requirements.txt
 kafka-python==2.0.2
 mysql-connector-python==8.0.26
+pytz==2023.3
