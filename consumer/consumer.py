@@ -1,4 +1,3 @@
-# ./consumer/consumer.py
 from kafka import KafkaConsumer
 import json
 import mysql.connector
@@ -72,7 +71,6 @@ def store_pedido(pedido):
         inserted_id = cursor.lastrowid
         print(f"✅ Pedido insertado con ID: {inserted_id}")
         
-        # Verificar la inserción
         cursor.execute("SELECT * FROM pedidos WHERE id = %s", (inserted_id,))
         result = cursor.fetchone()
         print(f"✅ Verificación de inserción: {result}")
@@ -87,7 +85,7 @@ def store_pedido(pedido):
 
 def main():
     print("\n=== Iniciando consumidor de Kafka ===")
-    time.sleep(10)  # Esperar a que Kafka esté listo
+    time.sleep(10)
     
     try:
         consumer = KafkaConsumer(

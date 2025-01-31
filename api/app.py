@@ -1,4 +1,3 @@
-# ./api/app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from kafka import KafkaProducer
@@ -19,13 +18,12 @@ def crear_pedido():
     try:
         pedido = request.json
         
-        # Validar que todos los campos requeridos estén presentes
         required_fields = ['sucursal', 'producto', 'cantidad', 'total', 'fecha']
         for field in required_fields:
             if field not in pedido:
                 return jsonify({"error": f"Falta el campo {field}"}), 400
 
-        # Validar el formato de la fecha
+        #Para ver si el formato de la fecha es correcto :)
         try:
             fecha = datetime.strptime(pedido['fecha'], '%Y-%m-%d %H:%M:%S')
             pedido['fecha'] = fecha.strftime('%Y-%m-%d %H:%M:%S')

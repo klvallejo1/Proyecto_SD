@@ -48,8 +48,6 @@ curl -X POST http://localhost/api/pedidos \
     "total": 799.96
 }'
 
-¡Ah, perfecto! Aquí tienes los 5 curl usando el comando `date` para obtener la fecha y hora actuales automáticamente:
-
 ```bash
 # Producto 1 - Valle
 curl -X POST http://localhost/api/pedidos \

@@ -1,4 +1,3 @@
-# ./dashboard/app.py
 from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 import mysql.connector
@@ -43,7 +42,6 @@ def get_pedidos():
         pedidos = cursor.fetchall()
         app.logger.info(f"Encontrados {len(pedidos)} pedidos")
         
-        # Convertir datetime a string
         for pedido in pedidos:
             if isinstance(pedido['fecha'], datetime):
                 pedido['fecha'] = pedido['fecha'].strftime('%Y-%m-%d %H:%M:%S')
@@ -79,7 +77,6 @@ def get_pedidos_por_sucursal(sucursal):
         pedidos = cursor.fetchall()
         app.logger.info(f"Encontrados {len(pedidos)} pedidos para sucursal {sucursal}")
         
-        # Convertir datetime a string
         for pedido in pedidos:
             if isinstance(pedido['fecha'], datetime):
                 pedido['fecha'] = pedido['fecha'].strftime('%Y-%m-%d %H:%M:%S')
