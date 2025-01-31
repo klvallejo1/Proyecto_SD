@@ -2,131 +2,120 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard de Pedidos</title>
+    <title>Dashboard de Pedidos en Tiempo Real</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container mt-4">
         <h1>Dashboard de Pedidos</h1>
+        <div class="badge bg-success" id="realtime-badge">En tiempo real</div>
         
         <div class="row mb-3">
-            <div class="col">
-                <button class="btn btn-primary" onclick="cargarPedidos(document.getElementById('sucursal').value)">
-                    Actualizar Datos
-                </button>
-                <small class="text-muted ms-2">Actualización automática cada 5 segundos</small>
+            <!-- Gráfico de Pastel -->
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        Distribución de Productos por Sucursal
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="row mb-3">
-            <div class="col">
-                <label for="sucursal" class="form-label">Filtrar por Sucursal:</label>
-                <select class="form-select" id="sucursal">
-                    <option value="">Todas las sucursales</option>
-                </select>
+            <!-- Tabla de datos -->
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label for="sucursal" class="form-label">Filtrar por Sucursal:</label>
+                    <select class="form-select" id="sucursal">
+                        <option value="">Todas las sucursales</option>
+                    </select>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Sucursal</th>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Total</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pedidos-table">
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Sucursal</th>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Total</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody id="pedidos-table">
-                </tbody>
-            </table>
         </div>
     </div>
 
+    <style>
+        .new-row {
+            animation: highlightNew 2s ease-out;
+        }
+        @keyframes highlightNew {
+            0% { background-color: #90EE90; }
+            100% { background-color: transparent; }
+        }
+        #pieChart {
+            max-height: 300px;
+        }
+    </style>
+
     <script>
-        let ultimaActualizacion = 0;
-        const INTERVALO_MINIMO = 1000; // 1 segundo entre actualizaciones
+        let pieChart;
+        let currentFilter = '';
+        let lastData = [];
 
-        async function cargarPedidos(sucursal = '') {
-            const ahora = Date.now();
-            if (ahora - ultimaActualizacion < INTERVALO_MINIMO) {
-                return; // Evitar actualizaciones muy frecuentes
-            }
-            ultimaActualizacion = ahora;
-
-            try {
-                let url = '/pedidos';
-                if (sucursal) {
-                    url = `/pedidos/sucursal/${encodeURIComponent(sucursal)}`;
+        // Inicializar el gráfico
+        function initPieChart() {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
                 }
-                
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const pedidos = await response.json();
-                actualizarTablaPedidos(pedidos);
-                actualizarSucursales(pedidos);
-            } catch (error) {
-                console.error('Error al cargar los pedidos:', error);
-                mostrarError(error.message);
-            }
+            });
         }
 
-        function actualizarTablaPedidos(pedidos) {
-            const tbody = document.getElementById('pedidos-table');
+        // Actualizar el gráfico con nuevos datos
+        function updatePieChart(pedidos) {
+            const sucursalCount = {};
             
-            if (!pedidos || pedidos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay pedidos disponibles</td></tr>';
-                return;
-            }
-
-            // Crear un fragmento para mejor rendimiento
-            const fragment = document.createDocumentFragment();
             pedidos.forEach(pedido => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${pedido.id}</td>
-                    <td>${pedido.sucursal}</td>
-                    <td>${pedido.producto}</td>
-                    <td>${pedido.cantidad}</td>
-                    <td>$${parseFloat(pedido.total).toFixed(2)}</td>
-                    <td>${new Date(pedido.fecha).toLocaleString()}</td>
-                `;
-                fragment.appendChild(row);
+                sucursalCount[pedido.sucursal] = (sucursalCount[pedido.sucursal] || 0) + pedido.cantidad;
             });
 
-            // Actualizar la tabla una sola vez
-            tbody.innerHTML = '';
-            tbody.appendChild(fragment);
-        }
+            const labels = Object.keys(sucursalCount);
+            const data = Object.values(sucursalCount);
 
-        function actualizarSucursales(pedidos) {
-            if (!pedidos || pedidos.length === 0) return;
-
-            const sucursales = new Set(pedidos.map(p => p.sucursal));
-            const selector = document.getElementById('sucursal');
-            const valorActual = selector.value;
-            
-            const fragment = document.createDocumentFragment();
-            const optionTodas = document.createElement('option');
-            optionTodas.value = '';
-            optionTodas.textContent = 'Todas las sucursales';
-            fragment.appendChild(optionTodas);
-
-            sucursales.forEach(s => {
-                const option = document.createElement('option');
-                option.value = s;
-                option.textContent = s;
-                if (s === valorActual) option.selected = true;
-                fragment.appendChild(option);
-            });
-
-            selector.innerHTML = '';
-            selector.appendChild(fragment);
+            pieChart.data.labels = labels;
+            pieChart.data.datasets[0].data = data;
+            pieChart.update();
         }
 
         function mostrarError(mensaje) {
@@ -140,40 +129,80 @@
             `;
         }
 
-        // Event listener para el selector de sucursales
-        document.getElementById('sucursal').addEventListener('change', (e) => {
-            cargarPedidos(e.target.value);
-        });
-
-        // Cargar datos iniciales
-        cargarPedidos();
-
-        // Actualizar datos cada 5 segundos
-        const intervaloActualizacion = 5000; // 5 segundos
-        setInterval(() => {
-            const sucursal = document.getElementById('sucursal').value;
-            cargarPedidos(sucursal);
-        }, intervaloActualizacion);
-
-        // Intentar actualizar inmediatamente después de un nuevo pedido
-        let intentosInmediatos = 0;
-        const maximoIntentos = 6; // Intentar durante 3 segundos (6 intentos * 500ms)
-
-        function actualizacionInmediata() {
-            if (intentosInmediatos < maximoIntentos) {
-                setTimeout(() => {
-                    cargarPedidos(document.getElementById('sucursal').value);
-                    intentosInmediatos++;
-                    actualizacionInmediata();
-                }, 500);
+        async function cargarPedidos(sucursal = '') {
+            try {
+                const url = sucursal ? `/pedidos/sucursal/${encodeURIComponent(sucursal)}` : '/pedidos';
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const pedidos = await response.json();
+                
+                actualizarTabla(pedidos);
+                updatePieChart(pedidos);
+            } catch (error) {
+                console.error('Error al cargar los pedidos:', error);
+                mostrarError(error.message);
             }
         }
 
-        // Escuchar por nuevos pedidos (opcional, si implementas websockets)
-        window.addEventListener('nuevoPedido', () => {
-            intentosInmediatos = 0;
-            actualizacionInmediata();
+        function actualizarTabla(pedidos) {
+            const tbody = document.getElementById('pedidos-table');
+            tbody.innerHTML = '';
+            
+            if (!pedidos || pedidos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay pedidos disponibles</td></tr>';
+                return;
+            }
+            
+            pedidos.forEach(pedido => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${pedido.id}</td>
+                    <td>${pedido.sucursal}</td>
+                    <td>${pedido.producto}</td>
+                    <td>${pedido.cantidad}</td>
+                    <td>$${parseFloat(pedido.total).toFixed(2)}</td>
+                    <td>${new Date(pedido.fecha).toLocaleString()}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Actualizar el selector de sucursales
+            actualizarSucursales(pedidos);
+        }
+
+        function actualizarSucursales(pedidos) {
+            const sucursales = new Set(pedidos.map(p => p.sucursal));
+            const selector = document.getElementById('sucursal');
+            const valorActual = selector.value;
+            
+            selector.innerHTML = '<option value="">Todas las sucursales</option>';
+            sucursales.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s;
+                option.textContent = s;
+                if (s === valorActual) option.selected = true;
+                selector.appendChild(option);
+            });
+        }
+
+        // Event listener para el selector de sucursales
+        document.getElementById('sucursal').addEventListener('change', (e) => {
+            currentFilter = e.target.value;
+            cargarPedidos(currentFilter);
         });
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            initPieChart();
+            cargarPedidos();
+        });
+
+        // Actualizar datos cada 5 segundos
+        setInterval(() => {
+            cargarPedidos(currentFilter);
+        }, 5000);
     </script>
 </body>
 </html>
