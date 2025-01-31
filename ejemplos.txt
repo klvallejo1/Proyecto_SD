@@ -47,3 +47,62 @@ curl -X POST http://localhost/api/pedidos \
     "cantidad": 4,
     "total": 799.96
 }'
+
+¡Ah, perfecto! Aquí tienes los 5 curl usando el comando `date` para obtener la fecha y hora actuales automáticamente:
+
+```bash
+# Producto 1 - Valle
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d "{
+    \"sucursal\": \"Sucursal Valle\",
+    \"producto\": \"MacBook Pro M3\",
+    \"cantidad\": 2,
+    \"total\": 3499.99,
+    \"fecha\": \"$(date '+%Y-%m-%d %H:%M:%S')\"
+}"
+
+# Producto 2 - Sur
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d "{
+    \"sucursal\": \"Sucursal Sur\",
+    \"producto\": \"AirPods Pro\",
+    \"cantidad\": 5,
+    \"total\": 1245.95,
+    \"fecha\": \"$(date '+%Y-%m-%d %H:%M:%S')\"
+}"
+
+# Producto 3 - Valle
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d "{
+    \"sucursal\": \"Sucursal Valle\",
+    \"producto\": \"Samsung Galaxy S24 Ultra\",
+    \"cantidad\": 3,
+    \"total\": 3599.97,
+    \"fecha\": \"$(date '+%Y-%m-%d %H:%M:%S')\"
+}"
+
+# Producto 4 - Centro
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d "{
+    \"sucursal\": \"Sucursal Centro\",
+    \"producto\": \"iPad Pro 12.9\",
+    \"cantidad\": 4,
+    \"total\": 4396.00,
+    \"fecha\": \"$(date '+%Y-%m-%d %H:%M:%S')\"
+}"
+
+# Producto 5 - Norte
+curl -X POST http://localhost/api/pedidos \
+-H "Content-Type: application/json" \
+-d "{
+    \"sucursal\": \"Sucursal Norte\",
+    \"producto\": \"Monitor Dell UltraSharp 32\",
+    \"cantidad\": 2,
+    \"total\": 1899.98,
+    \"fecha\": \"$(date '+%Y-%m-%d %H:%M:%S')\"
+}"
+```
